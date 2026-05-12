@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -213,7 +219,7 @@ export const PatrolScreen: React.FC = () => {
     if (!matched) {
       Alert.alert(
         "Invalid QR code",
-        "This QR code is not one of the configured Rosedale patrol points.",
+        "This QR code is not one of the configured patrol points.",
         [{ text: "OK", onPress: finishScanAttempt }],
       );
       return;
@@ -343,7 +349,7 @@ export const PatrolScreen: React.FC = () => {
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.title}>QR Patrol</Text>
-          <Text style={styles.headerMeta}>Rosedale NIGHT shift</Text>
+          <Text style={styles.headerMeta}> NIGHT shift</Text>
         </View>
         <View style={styles.headerRight}>
           {isSyncing ? (
@@ -397,7 +403,9 @@ export const PatrolScreen: React.FC = () => {
               </Text>
             </View>
             <View style={[styles.scanPill, last && styles.scanPillDone]}>
-              <Text style={[styles.scanPillText, last && styles.scanPillTextDone]}>
+              <Text
+                style={[styles.scanPillText, last && styles.scanPillTextDone]}
+              >
                 {last ? "OK" : "--"}
               </Text>
             </View>

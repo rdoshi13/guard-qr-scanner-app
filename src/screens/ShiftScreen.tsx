@@ -82,7 +82,7 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>Rosedale QR Patrol</Text>
+        <Text style={styles.title}> QR Patrol</Text>
         <Text style={styles.subtitle}>
           Start a NIGHT shift to scan patrol checkpoints.
         </Text>
@@ -101,7 +101,11 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
                 onPress={() => navigation.navigate("Patrol")}
               />
             </View>
-            <AppButton title="End shift" onPress={endSession} variant="danger" />
+            <AppButton
+              title="End shift"
+              onPress={endSession}
+              variant="danger"
+            />
           </View>
         ) : (
           <View style={styles.form}>
