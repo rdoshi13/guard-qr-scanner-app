@@ -1,0 +1,1 @@
+# guard-qr-scanner-app
