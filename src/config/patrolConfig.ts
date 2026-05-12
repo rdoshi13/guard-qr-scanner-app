@@ -6,7 +6,7 @@ export type PatrolPointConfig = {
 };
 
 export const PATROL_CONFIG = {
-  society: "Rosedale",
+  society: "Vihav Trade Center",
   points: [
     {
       id: "p1",
