@@ -12,6 +12,7 @@ export type PatrolScan = {
 
 export type PatrolHourRecord = {
   id: string;
+  societyId: string;
   society: string;
   guardId: string;
   guardName: string;
@@ -29,6 +30,7 @@ export type PatrolSyncRow = {
   dateKey: string;
   hourStart: number;
   hourWindow: string;
+  societyId: string;
   society: string;
   guardId: string;
   guardName: string;
@@ -60,6 +62,28 @@ function nowIso(): string {
 
 export function makeId(prefix: string = "phr"): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeRecordIdPart(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+export function makePatrolRecordId(input: {
+  societyId: string;
+  dateKey: string;
+  hourStart: number;
+  guardId: string;
+}): string {
+  return [
+    normalizeRecordIdPart(input.societyId),
+    input.dateKey,
+    String(input.hourStart).padStart(2, "0"),
+    normalizeRecordIdPart(input.guardId),
+  ].join("|");
 }
 
 export function localDateKey(d: Date = new Date()): string {
@@ -112,6 +136,7 @@ export async function savePatrolHourRecords(
 }
 
 export async function upsertHourRecord(input: {
+  societyId: string;
   society: string;
   guardId: string;
   guardName: string;
@@ -129,13 +154,20 @@ export async function upsertHourRecord(input: {
     (r) =>
       r.dateKey === input.dateKey &&
       r.hourStart === input.hourStart &&
+      (r.societyId ?? "") === input.societyId &&
       r.guardId === input.guardId,
   );
 
   if (existing) return existing;
 
   const created: PatrolHourRecord = {
-    id: makeId(),
+    id: makePatrolRecordId({
+      societyId: input.societyId,
+      dateKey: input.dateKey,
+      hourStart: input.hourStart,
+      guardId: input.guardId,
+    }),
+    societyId: input.societyId,
     society: input.society,
     guardId: input.guardId,
     guardName: input.guardName,
@@ -255,10 +287,20 @@ export async function cleanupInvalidPatrolHourRecords(): Promise<number> {
   const all = await loadPatrolHourRecords();
   if (all.length === 0) return 0;
 
-  const next = all.filter((r) => isValidPatrolHourStart(r.hourStart));
+  let normalized = false;
+  const next = all
+    .filter((r) => isValidPatrolHourStart(r.hourStart))
+    .map((r) => {
+      if (r.societyId) return r;
+      normalized = true;
+      return {
+        ...r,
+        societyId: normalizeRecordIdPart(r.society),
+      };
+    });
   const removed = all.length - next.length;
 
-  if (removed > 0) {
+  if (removed > 0 || normalized) {
     await savePatrolHourRecords(next);
   }
 
@@ -297,6 +339,7 @@ export function patrolRecordToSyncRow(r: PatrolHourRecord): PatrolSyncRow {
     dateKey: r.dateKey,
     hourStart: r.hourStart,
     hourWindow: hourWindowLabel(r.hourStart),
+    societyId: r.societyId,
     society: r.society,
     guardId: r.guardId,
     guardName: r.guardName,

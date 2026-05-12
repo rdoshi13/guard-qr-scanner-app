@@ -3,6 +3,7 @@ create table if not exists public.patrol_hour_records (
   date_key text not null,
   hour_start integer not null check (hour_start between 0 and 23),
   hour_window text not null,
+  society_id text not null default 'vihav_trade_center',
   society text not null,
   guard_id text not null,
   guard_name text not null,
@@ -17,10 +18,10 @@ create table if not exists public.patrol_hour_records (
 );
 
 create index if not exists patrol_hour_records_date_hour_idx
-  on public.patrol_hour_records (date_key, hour_start);
+  on public.patrol_hour_records (society_id, date_key, hour_start);
 
 create index if not exists patrol_hour_records_guard_idx
-  on public.patrol_hour_records (guard_id, date_key);
+  on public.patrol_hour_records (society_id, guard_id, date_key);
 
 alter table public.patrol_hour_records enable row level security;
 

@@ -227,6 +227,7 @@ export const PatrolScreen: React.FC = () => {
 
     const scanTime = new Date();
     const record = await upsertHourRecord({
+      societyId: PATROL_CONFIG.societyId,
       society: PATROL_CONFIG.society,
       guardId: session.guardId,
       guardName: session.guardName,

@@ -32,6 +32,7 @@ function toSupabaseRow(row: PatrolSyncRow) {
     date_key: row.dateKey,
     hour_start: row.hourStart,
     hour_window: row.hourWindow,
+    society_id: row.societyId,
     society: row.society,
     guard_id: row.guardId,
     guard_name: row.guardName,

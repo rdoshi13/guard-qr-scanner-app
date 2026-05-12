@@ -49,3 +49,4 @@ pnpm typecheck
 - `src/sync/supabase.ts` - Supabase sync.
 - `src/constants/supabase.ts` - Supabase env config.
 - `supabase/schema.sql` - database table and policies.
+- `supabase/migrations/` - changes for existing Supabase tables.
