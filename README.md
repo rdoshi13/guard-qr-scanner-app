@@ -9,7 +9,7 @@ Small Expo/React Native app for guard patrol QR scanning.
 - Tracks one scan per point per hour.
 - Supports 10 patrol points: `GUARDPATROL_QR_P1` through `GUARDPATROL_QR_P10`.
 - Stores patrol records locally in `patrol_hour_records_v1`.
-- Syncs finalized patrol records to Google Sheets with payload kind `patrol_hour_records_v1`.
+- Syncs patrol progress to Supabase for owner/admin visibility.
 
 There is no time-window restriction; scans can happen at any hour after a shift starts.
 
@@ -21,6 +21,18 @@ pnpm start -- --clear
 ```
 
 Then open the app with Expo Go.
+
+## Supabase
+
+Create a Supabase project, run `supabase/schema.sql` in the SQL editor, then add:
+
+```bash
+EXPO_PUBLIC_SUPABASE_URL=...
+EXPO_PUBLIC_SUPABASE_ANON_KEY=...
+EXPO_PUBLIC_SUPABASE_PATROL_TABLE=patrol_hour_records
+```
+
+Use `.env.example` as the template.
 
 ## Checks
 
@@ -34,5 +46,6 @@ pnpm typecheck
 - `src/screens/ShiftScreen.tsx` - guard shift start screen.
 - `src/screens/PatrolScreen.tsx` - QR scan UI and patrol progress.
 - `src/storage/patrol.ts` - local patrol record model.
-- `src/sync/sheets.ts` - Google Sheets sync.
-- `src/constants/sheets.ts` - Apps Script sync URL/token config.
+- `src/sync/supabase.ts` - Supabase sync.
+- `src/constants/supabase.ts` - Supabase env config.
+- `supabase/schema.sql` - database table and policies.

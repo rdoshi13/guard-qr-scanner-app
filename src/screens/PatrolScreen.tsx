@@ -31,8 +31,8 @@ import {
   PatrolHourRecord,
   upsertHourRecord,
 } from "../storage/patrol";
-import { SHEETS_SYNC_CONFIG } from "../constants/sheets";
-import { syncPatrolHourRecords } from "../sync/sheets";
+import { SUPABASE_SYNC_CONFIG } from "../constants/supabase";
+import { syncPatrolHourRecords } from "../sync/supabase";
 
 function formatDateTime(iso?: string): string {
   if (!iso) return "-";
@@ -171,7 +171,7 @@ export const PatrolScreen: React.FC = () => {
 
     try {
       setIsSyncing(true);
-      const result = await syncPatrolHourRecords(SHEETS_SYNC_CONFIG);
+      const result = await syncPatrolHourRecords(SUPABASE_SYNC_CONFIG);
 
       if (!result.ok) {
         Alert.alert("Sync failed", result.message ?? "Sync did not complete.");
@@ -254,6 +254,9 @@ export const PatrolScreen: React.FC = () => {
     }
 
     await refreshRecords();
+    syncPatrolHourRecords(SUPABASE_SYNC_CONFIG)
+      .then(refreshRecords)
+      .catch(() => {});
     Vibration.vibrate(150);
 
     if (updated && updated.completedCount === checkpoints.length) {
@@ -349,7 +352,9 @@ export const PatrolScreen: React.FC = () => {
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.title}>QR Patrol</Text>
-          <Text style={styles.headerMeta}> NIGHT shift</Text>
+          <Text style={styles.headerMeta}>
+            {PATROL_CONFIG.society} NIGHT shift
+          </Text>
         </View>
         <View style={styles.headerRight}>
           {isSyncing ? (

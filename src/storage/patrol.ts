@@ -25,8 +25,9 @@ export type PatrolHourRecord = {
   syncedAt?: string;
 };
 
-export type PatrolSheetRow = {
+export type PatrolSyncRow = {
   dateKey: string;
+  hourStart: number;
   hourWindow: string;
   society: string;
   guardId: string;
@@ -34,7 +35,9 @@ export type PatrolSheetRow = {
   status: "COMPLETED" | "MISSED" | "IN_PROGRESS";
   recordId: string;
   completedCount: number;
+  totalPoints: number;
   pointsScanned: string;
+  scans: Record<string, PatrolScan>;
   createdAt: string;
   finalizedAt: string;
 };
@@ -179,6 +182,7 @@ export async function applyScan(args: {
     ...record,
     scans: nextScans,
     completedCount: countCompleted(nextScans),
+    syncedAt: undefined,
   };
 
   all[idx] = next;
@@ -199,7 +203,7 @@ export async function finalizeHourRecord(args: {
     ...record,
     status: args.status,
     finalizedAt: nowIso(),
-    syncedAt: record.syncedAt ?? undefined,
+    syncedAt: undefined,
   };
 
   all[idx] = next;
@@ -213,8 +217,9 @@ export async function getUnsyncedHourRecords(): Promise<PatrolHourRecord[]> {
     (r) =>
       isValidPatrolHourStart(r.hourStart) &&
       !r.syncedAt &&
-      !!r.finalizedAt &&
-      (r.status === "COMPLETED" || r.status === "MISSED"),
+      (r.status === "IN_PROGRESS" ||
+        r.status === "COMPLETED" ||
+        r.status === "MISSED"),
   );
 }
 
@@ -276,9 +281,21 @@ function pointsScannedList(scans: PatrolHourRecord["scans"]): string {
   return points.join(",");
 }
 
-export function patrolRecordToSheetRow(r: PatrolHourRecord): PatrolSheetRow {
+function completedScans(
+  scans: PatrolHourRecord["scans"],
+): Record<string, PatrolScan> {
+  const output: Record<string, PatrolScan> = {};
+  (Object.keys(scans) as unknown as PatrolPoint[]).forEach((k) => {
+    const scan = scans[k];
+    if (scan) output[String(k)] = scan;
+  });
+  return output;
+}
+
+export function patrolRecordToSyncRow(r: PatrolHourRecord): PatrolSyncRow {
   return {
     dateKey: r.dateKey,
+    hourStart: r.hourStart,
     hourWindow: hourWindowLabel(r.hourStart),
     society: r.society,
     guardId: r.guardId,
@@ -286,7 +303,9 @@ export function patrolRecordToSheetRow(r: PatrolHourRecord): PatrolSheetRow {
     status: r.status,
     recordId: r.id,
     completedCount: r.completedCount,
+    totalPoints: Object.keys(r.scans).length,
     pointsScanned: pointsScannedList(r.scans),
+    scans: completedScans(r.scans),
     createdAt: r.createdAt,
     finalizedAt: r.finalizedAt ?? "",
   };
