@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 
+import { AppSplash } from "./src/components/AppSplash";
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { LanguageProvider } from "./src/context/LanguageContext";
 import { SessionProvider } from "./src/context/SessionContext";
@@ -48,6 +49,18 @@ const AppBootstrap: React.FC = () => {
 };
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const handleSplashDone = useCallback(() => setShowSplash(false), []);
+
+  if (showSplash) {
+    return (
+      <>
+        <AppSplash onDone={handleSplashDone} />
+        <StatusBar style="light" />
+      </>
+    );
+  }
+
   return (
     <LanguageProvider>
       <SessionProvider>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -10,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { AppButton } from "../components/AppButton";
 import { useLanguage } from "../context/LanguageContext";
@@ -59,6 +61,16 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
     if (guardIdEdited) return;
     setGuardId(makeGuardId(guardName));
   }, [guardIdEdited, guardName]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        () => true,
+      );
+      return () => subscription.remove();
+    }, []),
+  );
 
   const startShift = () => {
     if (!canStart) {

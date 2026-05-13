@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" role="img" aria-label="Guard Patrol Scanner">
+  <rect width="44" height="44" rx="10" fill="#17202a"/>
+  <path
+    d="M22 8.8 34 14.1v8.4c0 8-4.5 13.1-12 15.6-7.5-2.5-12-7.6-12-15.6v-8.4L22 8.8Z"
+    fill="#f7f9fb"
+  />
+  <path
+    d="m16.8 23 4.1 4.1 7.9-9.1"
+    fill="none"
+    stroke="#157f59"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

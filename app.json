@@ -1,34 +1,36 @@
 {
   "expo": {
-    "name": "Guard QR App",
-    "slug": "guard-qr-app",
+    "name": "Guard Patrol Scanner",
+    "slug": "guard-qr-scanner-app",
+    "description": "QR-based hourly patrol scanner for Vihav Trade Center guards.",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/patrol-splash-logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/patrol-splash-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0b2345"
+      "backgroundColor": "#17202a"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.devrishabh.guardpatrolscanner"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0b2345"
+        "foregroundImage": "./assets/patrol-splash-logo.png",
+        "backgroundColor": "#17202a"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA"
       ],
-      "package": "com.devrishabh.guardqrapp"
+      "package": "com.devrishabh.guardpatrolscanner"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/patrol-splash-logo.png"
     },
     "plugins": []
   }

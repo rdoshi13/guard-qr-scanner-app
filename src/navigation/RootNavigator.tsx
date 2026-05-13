@@ -21,7 +21,11 @@ export const RootNavigator: React.FC = () => {
       <Stack.Screen
         name="Shift"
         component={ShiftScreen}
-        options={{ title: t(language, "shiftScreenTitle") }}
+        options={{
+          title: t(language, "shiftScreenTitle"),
+          headerBackVisible: false,
+          gestureEnabled: false,
+        }}
       />
       <Stack.Screen
         name="Patrol"
