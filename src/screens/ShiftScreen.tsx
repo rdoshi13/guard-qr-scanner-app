@@ -12,7 +12,9 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { AppButton } from "../components/AppButton";
+import { useLanguage } from "../context/LanguageContext";
 import { useSession } from "../context/SessionContext";
+import { Language, t } from "../i18n/strings";
 import { RootStackParamList } from "../navigation/RootNavigator";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Shift">;
@@ -43,6 +45,7 @@ function makeGuardId(name: string): string {
 
 export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
   const { session, lastSession, startSession, endSession } = useSession();
+  const { language, setLanguage } = useLanguage();
   const [guardName, setGuardName] = useState(lastSession?.guardName ?? "");
   const [guardId, setGuardId] = useState(lastSession?.guardId ?? "");
   const [guardIdEdited, setGuardIdEdited] = useState(false);
@@ -59,7 +62,10 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
 
   const startShift = () => {
     if (!canStart) {
-      Alert.alert("Missing details", "Enter a guard name and guard ID.");
+      Alert.alert(
+        t(language, "missingDetailsTitle"),
+        t(language, "missingDetailsMessage"),
+      );
       return;
     }
 
@@ -81,56 +87,56 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}> QR Patrol</Text>
-        <Text style={styles.subtitle}>
-          Start a guard shift to scan patrol checkpoints throughout the day.
-        </Text>
+        <Text style={styles.title}>{t(language, "startShiftTitle")}</Text>
+        <Text style={styles.subtitle}>{t(language, "startShiftSubtitle")}</Text>
 
         {session ? (
           <View style={styles.sessionCard}>
-            <Text style={styles.cardTitle}>Active shift</Text>
+            <Text style={styles.cardTitle}>{t(language, "activeShift")}</Text>
             <Text style={styles.cardText}>{session.guardName}</Text>
-            <Text style={styles.cardMeta}>Guard ID: {session.guardId}</Text>
             <Text style={styles.cardMeta}>
-              Started: {formatDateTime(session.startedAt)}
+              {t(language, "guardId")}: {session.guardId}
+            </Text>
+            <Text style={styles.cardMeta}>
+              {t(language, "started")}: {formatDateTime(session.startedAt)}
             </Text>
             <View style={styles.buttonGap}>
               <AppButton
-                title="Continue scanning"
-                onPress={() => navigation.navigate("Patrol")}
+                title={t(language, "continueScanning")}
+                onPress={() => navigation.replace("Patrol")}
               />
             </View>
             <AppButton
-              title="End shift"
+              title={t(language, "endShift")}
               onPress={endSession}
               variant="danger"
             />
           </View>
         ) : (
           <View style={styles.form}>
-            <Text style={styles.label}>Guard name</Text>
+            <Text style={styles.label}>{t(language, "guardName")}</Text>
             <TextInput
               value={guardName}
               onChangeText={setGuardName}
-              placeholder="Enter guard name"
+              placeholder={t(language, "enterGuardName")}
               autoCapitalize="words"
               style={styles.input}
             />
 
-            <Text style={styles.label}>Guard ID</Text>
+            <Text style={styles.label}>{t(language, "guardId")}</Text>
             <TextInput
               value={guardId}
               onChangeText={(value) => {
                 setGuardIdEdited(true);
                 setGuardId(value);
               }}
-              placeholder="Enter guard ID"
+              placeholder={t(language, "enterGuardId")}
               autoCapitalize="characters"
               style={styles.input}
             />
 
             <AppButton
-              title="Start shift"
+              title={t(language, "startShift")}
               onPress={startShift}
               disabled={!canStart}
               style={styles.startButton}
@@ -140,13 +146,31 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
 
         {lastSession && !session ? (
           <View style={styles.lastCard}>
-            <Text style={styles.cardTitle}>Last shift</Text>
+            <Text style={styles.cardTitle}>{t(language, "lastShift")}</Text>
             <Text style={styles.cardText}>{lastSession.guardName}</Text>
             <Text style={styles.cardMeta}>
-              Ended: {formatDateTime(lastSession.endedAt)}
+              {t(language, "ended")}: {formatDateTime(lastSession.endedAt)}
             </Text>
           </View>
         ) : null}
+
+        <View style={styles.languageSection}>
+          <Text style={styles.languageTitle}>{t(language, "language")}</Text>
+          <View style={styles.languageRow}>
+            {(["en", "gu"] as Language[]).map((item) => {
+              const selected = language === item;
+              return (
+                <View key={item} style={styles.languageButtonWrap}>
+                  <AppButton
+                    title={t(language, item === "en" ? "english" : "gujarati")}
+                    onPress={() => setLanguage(item)}
+                    variant={selected ? "primary" : "secondary"}
+                  />
+                </View>
+              );
+            })}
+          </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -233,5 +257,21 @@ const styles = StyleSheet.create({
   buttonGap: {
     marginTop: 14,
     marginBottom: 10,
+  },
+  languageSection: {
+    marginTop: 16,
+  },
+  languageTitle: {
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#334e68",
+  },
+  languageRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  languageButtonWrap: {
+    flex: 1,
   },
 });

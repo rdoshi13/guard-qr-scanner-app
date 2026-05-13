@@ -8,6 +8,7 @@ export type PatrolPointConfig = {
 export const PATROL_CONFIG = {
   societyId: "vihav_trade_center",
   society: "Vihav Trade Center",
+  timeZone: "Asia/Kolkata",
   points: [
     {
       id: "p1",
@@ -71,3 +72,43 @@ export const PATROL_CONFIG = {
     },
   ] satisfies PatrolPointConfig[],
 };
+
+function timeZoneParts(d: Date): { dateKey: string; hourStart: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: PATROL_CONFIG.timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+
+  const get = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  const hourRaw = Number(get("hour"));
+  const hourStart = hourRaw === 24 ? 0 : hourRaw;
+
+  return {
+    dateKey: `${get("year")}-${get("month")}-${get("day")}`,
+    hourStart,
+  };
+}
+
+function formatHour(hour: number): string {
+  const normalized = ((hour % 24) + 24) % 24;
+  const suffix = normalized >= 12 ? "PM" : "AM";
+  const display = normalized % 12 === 0 ? 12 : normalized % 12;
+  return `${display}:00 ${suffix}`;
+}
+
+export function patrolDateKey(d: Date = new Date()): string {
+  return timeZoneParts(d).dateKey;
+}
+
+export function patrolHourStart(d: Date = new Date()): number {
+  return timeZoneParts(d).hourStart;
+}
+
+export function patrolHourWindow(hourStart: number): string {
+  return `${formatHour(hourStart)} - ${formatHour(hourStart + 1)}`;
+}

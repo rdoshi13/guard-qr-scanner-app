@@ -10,7 +10,7 @@ create table if not exists public.patrol_hour_records (
   status text not null check (status in ('IN_PROGRESS', 'COMPLETED', 'MISSED')),
   completed_count integer not null default 0,
   total_points integer not null default 10,
-  points_scanned text not null default '',
+  points_scanned text[] not null default array[]::text[],
   scans jsonb not null default '{}'::jsonb,
   created_at timestamptz not null,
   finalized_at timestamptz,

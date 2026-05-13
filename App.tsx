@@ -4,6 +4,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { LanguageProvider } from "./src/context/LanguageContext";
 import { SessionProvider } from "./src/context/SessionContext";
 import { runAutoSyncIfDue } from "./src/sync/autoSync";
 
@@ -48,12 +49,14 @@ const AppBootstrap: React.FC = () => {
 
 export default function App() {
   return (
-    <SessionProvider>
-      <AppBootstrap />
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-      <StatusBar style="dark" />
-    </SessionProvider>
+    <LanguageProvider>
+      <SessionProvider>
+        <AppBootstrap />
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+        <StatusBar style="dark" />
+      </SessionProvider>
+    </LanguageProvider>
   );
 }

@@ -10,6 +10,7 @@ Small Expo/React Native app for guard patrol QR scanning.
 - Supports 10 patrol points: `GUARDPATROL_QR_P1` through `GUARDPATROL_QR_P10`.
 - Stores patrol records locally in `patrol_hour_records_v1`.
 - Syncs patrol progress to Supabase for owner/admin visibility.
+- Uses `Asia/Kolkata` for patrol date/hour records.
 
 There is no time-window restriction; scans can happen at any hour after a shift starts.
 
@@ -33,6 +34,8 @@ EXPO_PUBLIC_SUPABASE_PATROL_TABLE=patrol_hour_records
 ```
 
 Use `.env.example` as the template.
+
+For existing tables, run migrations in `supabase/migrations/` in order.
 
 ## Checks
 

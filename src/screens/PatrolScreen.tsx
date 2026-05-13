@@ -1,14 +1,15 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   Alert,
   BackHandler,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,7 +20,13 @@ import { Camera, CameraView } from "expo-camera";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import { AppButton } from "../components/AppButton";
-import { PATROL_CONFIG } from "../config/patrolConfig";
+import { useLanguage } from "../context/LanguageContext";
+import {
+  patrolDateKey,
+  patrolHourStart,
+  patrolHourWindow,
+  PATROL_CONFIG,
+} from "../config/patrolConfig";
 import { useSession } from "../context/SessionContext";
 import {
   applyScan,
@@ -27,10 +34,10 @@ import {
   cleanupSyncedOlderThan,
   finalizeHourRecord,
   loadPatrolHourRecords,
-  localDateKey,
   PatrolHourRecord,
   upsertHourRecord,
 } from "../storage/patrol";
+import { t } from "../i18n/strings";
 import { SUPABASE_SYNC_CONFIG } from "../constants/supabase";
 import { syncPatrolHourRecords } from "../sync/supabase";
 
@@ -50,32 +57,50 @@ function formatDateTime(iso?: string): string {
 }
 
 function hourLabel(hourStart: number): string {
-  const end = (hourStart + 1) % 24;
-  return `${String(hourStart).padStart(2, "0")}:00-${String(end).padStart(
-    2,
-    "0",
-  )}:00`;
+  return patrolHourWindow(hourStart);
 }
 
 function currentWindowLabel(now: Date): string {
-  return `${localDateKey(now)} ${String(now.getHours()).padStart(2, "0")}:00-${String(
-    now.getHours() + 1,
-  ).padStart(2, "0")}:00`;
+  return `${patrolDateKey(now)} ${patrolHourWindow(patrolHourStart(now))}`;
 }
 
 export const PatrolScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const { session, endSession } = useSession();
+  const { language } = useLanguage();
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
   const [isProcessingScan, setIsProcessingScan] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const [hourRecords, setHourRecords] = useState<PatrolHourRecord[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
   const scanLockRef = useRef(false);
 
   const checkpoints = PATROL_CONFIG.points;
+
+  const goToShiftScreen = useCallback(() => {
+    setScanning(false);
+    setTorchOn(false);
+    setIsProcessingScan(false);
+    scanLockRef.current = false;
+    navigation.replace("Shift");
+  }, [navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <Pressable
+          onPress={goToShiftScreen}
+          style={({ pressed }) => [
+            styles.headerBackButton,
+            pressed && styles.headerBackButtonPressed,
+          ]}
+        >
+          <Text style={styles.headerBackButtonText}>{t(language, "back")}</Text>
+        </Pressable>
+      ),
+    });
+  }, [goToShiftScreen, language, navigation]);
 
   const refreshRecords = useCallback(async () => {
     await cleanupInvalidPatrolHourRecords();
@@ -96,6 +121,8 @@ export const PatrolScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
+      refreshRecords().catch(() => {});
+
       const onBackPress = () => {
         if (scanning) {
           setScanning(false);
@@ -105,7 +132,6 @@ export const PatrolScreen: React.FC = () => {
           return true;
         }
 
-        navigation.navigate("Shift");
         return true;
       };
 
@@ -114,7 +140,7 @@ export const PatrolScreen: React.FC = () => {
         onBackPress,
       );
       return () => subscription.remove();
-    }, [navigation, scanning]),
+    }, [refreshRecords, scanning]),
   );
 
   const now = new Date();
@@ -122,7 +148,7 @@ export const PatrolScreen: React.FC = () => {
 
   const todayRecords = useMemo(() => {
     if (!session) return [];
-    const patrolDate = localDateKey();
+    const patrolDate = patrolDateKey();
     return hourRecords
       .filter((r) => r.dateKey === patrolDate && r.guardId === session.guardId)
       .sort((a, b) => a.hourStart - b.hourStart);
@@ -130,20 +156,23 @@ export const PatrolScreen: React.FC = () => {
 
   const currentHourRecord = useMemo(() => {
     if (!session) return undefined;
-    return todayRecords.find((r) => r.hourStart === new Date().getHours());
+    return todayRecords.find((r) => r.hourStart === patrolHourStart());
   }, [session, todayRecords]);
 
   const completedCount = currentHourRecord?.completedCount ?? 0;
 
   const displayHours = useMemo(() => {
-    const hours = new Set<number>([new Date().getHours()]);
+    const hours = new Set<number>([patrolHourStart()]);
     todayRecords.forEach((record) => hours.add(record.hourStart));
     return Array.from(hours).sort((a, b) => a - b);
   }, [todayRecords]);
 
   const ensurePatrolAllowed = (): boolean => {
     if (!session) {
-      Alert.alert("No active shift", "Start a shift before scanning.");
+      Alert.alert(
+        t(language, "noActiveShiftTitle"),
+        t(language, "noActiveShiftMessage"),
+      );
       return false;
     }
 
@@ -155,8 +184,8 @@ export const PatrolScreen: React.FC = () => {
 
     if (hasPermission === false) {
       Alert.alert(
-        "Camera blocked",
-        "Camera permission is required to scan patrol QR codes.",
+        t(language, "cameraBlockedTitle"),
+        t(language, "cameraBlockedMessage"),
       );
       return;
     }
@@ -164,35 +193,6 @@ export const PatrolScreen: React.FC = () => {
     setScanning(true);
     setIsProcessingScan(false);
     scanLockRef.current = false;
-  };
-
-  const manualSync = async () => {
-    if (isSyncing) return;
-
-    try {
-      setIsSyncing(true);
-      const result = await syncPatrolHourRecords(SUPABASE_SYNC_CONFIG);
-
-      if (!result.ok) {
-        Alert.alert("Sync failed", result.message ?? "Sync did not complete.");
-        return;
-      }
-
-      if (result.attempted === 0) {
-        Alert.alert("Sync complete", "No pending patrol records.");
-      } else {
-        Alert.alert(
-          "Sync complete",
-          `Attempted: ${result.attempted}\nSynced: ${result.synced}\nSkipped: ${result.skipped}`,
-        );
-      }
-
-      await refreshRecords();
-    } catch (e: any) {
-      Alert.alert("Sync failed", String(e?.message ?? e));
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   const finishScanAttempt = () => {
@@ -218,28 +218,31 @@ export const PatrolScreen: React.FC = () => {
     const matched = checkpoints.find((c) => c.qrValue === data);
     if (!matched) {
       Alert.alert(
-        "Invalid QR code",
-        "This QR code is not one of the configured patrol points.",
-        [{ text: "OK", onPress: finishScanAttempt }],
+        t(language, "invalidQrTitle"),
+        t(language, "invalidQrMessage"),
+        [{ text: t(language, "ok"), onPress: finishScanAttempt }],
       );
       return;
     }
 
     const scanTime = new Date();
+    const dateKey = patrolDateKey(scanTime);
+    const hourStart = patrolHourStart(scanTime);
     const record = await upsertHourRecord({
       societyId: PATROL_CONFIG.societyId,
       society: PATROL_CONFIG.society,
       guardId: session.guardId,
       guardName: session.guardName,
-      dateKey: localDateKey(scanTime),
-      hourStart: scanTime.getHours(),
+      dateKey,
+      hourStart,
+      hourWindow: patrolHourWindow(hourStart),
     });
 
     if (record.scans[matched.point]) {
       Alert.alert(
-        "Already scanned",
-        `${matched.label} has already been scanned for this hour.`,
-        [{ text: "OK", onPress: finishScanAttempt }],
+        t(language, "alreadyScannedTitle"),
+        t(language, "alreadyScannedMessage", { point: matched.label }),
+        [{ text: t(language, "ok"), onPress: finishScanAttempt }],
       );
       return;
     }
@@ -262,26 +265,28 @@ export const PatrolScreen: React.FC = () => {
 
     if (updated && updated.completedCount === checkpoints.length) {
       Alert.alert(
-        "Hour complete",
-        `All ${checkpoints.length} patrol points have been scanned for this hour.`,
-        [{ text: "OK", onPress: finishScanAttempt }],
+        t(language, "hourCompleteTitle"),
+        t(language, "hourCompleteMessage", { count: checkpoints.length }),
+        [{ text: t(language, "ok"), onPress: finishScanAttempt }],
       );
       return;
     }
 
-    Alert.alert("Scan saved", `${matched.label} recorded.`, [
-      { text: "OK", onPress: finishScanAttempt },
-    ]);
+    Alert.alert(
+      t(language, "scanSavedTitle"),
+      t(language, "scanSavedMessage", { point: matched.label }),
+      [{ text: t(language, "ok"), onPress: finishScanAttempt }],
+    );
   };
 
   if (!session) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.title}>QR Patrol</Text>
-        <Text style={styles.infoText}>Start a shift before scanning.</Text>
+        <Text style={styles.title}>{t(language, "scannerTitle")}</Text>
+        <Text style={styles.infoText}>{t(language, "noActiveShiftMessage")}</Text>
         <View style={styles.centerButton}>
           <AppButton
-            title="Start shift"
+            title={t(language, "startShift")}
             onPress={() => navigation.navigate("Shift")}
           />
         </View>
@@ -292,11 +297,11 @@ export const PatrolScreen: React.FC = () => {
   if (scanning) {
     return (
       <View style={styles.scannerContainer}>
-        <Text style={styles.scannerTitle}>Scan patrol checkpoint QR</Text>
+        <Text style={styles.scannerTitle}>{t(language, "scanPrompt")}</Text>
 
         {hasPermission === false ? (
           <Text style={styles.infoText}>
-            Camera permission is required to scan QR codes.
+            {t(language, "cameraPermissionMissing")}
           </Text>
         ) : (
           <View style={styles.scannerBox}>
@@ -316,14 +321,14 @@ export const PatrolScreen: React.FC = () => {
         <View style={styles.scannerActions}>
           <View style={styles.actionColumn}>
             <AppButton
-              title={torchOn ? "Torch off" : "Torch on"}
+              title={torchOn ? t(language, "torchOff") : t(language, "torchOn")}
               onPress={() => setTorchOn((prev) => !prev)}
               variant="secondary"
             />
           </View>
           <View style={styles.actionColumn}>
             <AppButton
-              title="Cancel"
+              title={t(language, "cancel")}
               onPress={finishScanAttempt}
               variant="secondary"
             />
@@ -338,10 +343,10 @@ export const PatrolScreen: React.FC = () => {
   };
 
   const statusLabel = (status?: string) => {
-    if (!status) return "Not started";
-    if (status === "COMPLETED") return "Completed";
-    if (status === "MISSED") return "Missed";
-    return "In progress";
+    if (!status) return t(language, "notStarted");
+    if (status === "COMPLETED") return t(language, "completed");
+    if (status === "MISSED") return t(language, "missed");
+    return t(language, "inProgress");
   };
 
   return (
@@ -350,38 +355,26 @@ export const PatrolScreen: React.FC = () => {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.title}>QR Patrol</Text>
-          <Text style={styles.headerMeta}>{PATROL_CONFIG.society}</Text>
-        </View>
-        <View style={styles.headerRight}>
-          {isSyncing ? (
-            <ActivityIndicator />
-          ) : (
-            <AppButton title="Sync" onPress={manualSync} variant="secondary" />
-          )}
-        </View>
-      </View>
-
       <View style={styles.shiftCard}>
         <Text style={styles.shiftTitle}>{session.guardName}</Text>
-        <Text style={styles.shiftText}>Guard ID: {session.guardId}</Text>
         <Text style={styles.shiftText}>
-          Started: {formatDateTime(session.startedAt)}
+          {t(language, "guardId")}: {session.guardId}
+        </Text>
+        <Text style={styles.shiftText}>
+          {t(language, "started")}: {formatDateTime(session.startedAt)}
         </Text>
       </View>
 
       <View style={styles.scanButtonWrap}>
         <AppButton
-          title="Scan QR"
+          title={t(language, "scanQr")}
           onPress={startScan}
           disabled={!canPatrolNow || hasPermission === null}
         />
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionHeaderText}>Current hour</Text>
+        <Text style={styles.sectionHeaderText}>{t(language, "currentHour")}</Text>
         <Text style={styles.sectionMeta}>{currentWindowLabel(now)}</Text>
       </View>
 
@@ -392,7 +385,7 @@ export const PatrolScreen: React.FC = () => {
         ]}
       >
         <Text style={styles.summaryText}>
-          Completed: {completedCount} / {checkpoints.length}
+          {t(language, "completed")}: {completedCount} / {checkpoints.length}
         </Text>
       </View>
 
@@ -403,7 +396,8 @@ export const PatrolScreen: React.FC = () => {
             <View style={styles.checkpointCopy}>
               <Text style={styles.checkpointName}>{point.label}</Text>
               <Text style={styles.checkpointInfo}>
-                Last scan: {last ? formatDateTime(last) : "Not scanned"}
+                {t(language, "lastScan")}:{" "}
+                {last ? formatDateTime(last) : t(language, "notScanned")}
               </Text>
             </View>
             <View style={[styles.scanPill, last && styles.scanPillDone]}>
@@ -418,7 +412,7 @@ export const PatrolScreen: React.FC = () => {
       })}
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionHeaderText}>Today</Text>
+        <Text style={styles.sectionHeaderText}>{t(language, "today")}</Text>
       </View>
 
       <View style={styles.hourGrid}>
@@ -439,14 +433,19 @@ export const PatrolScreen: React.FC = () => {
               <Text style={styles.hourTitle}>{hourLabel(hourStart)}</Text>
               <Text style={styles.hourMeta}>{statusLabel(record?.status)}</Text>
               <Text style={styles.hourMeta}>
-                Points: {record?.completedCount ?? 0} / {checkpoints.length}
+                {t(language, "points")}: {record?.completedCount ?? 0} /{" "}
+                {checkpoints.length}
               </Text>
             </View>
           );
         })}
       </View>
 
-      <AppButton title="End shift" onPress={endSession} variant="danger" />
+      <AppButton
+        title={t(language, "endShift")}
+        onPress={endSession}
+        variant="danger"
+      />
     </ScrollView>
   );
 };
@@ -471,15 +470,20 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  headerRow: {
-    flexDirection: "row",
+  headerBackButton: {
+    minHeight: 36,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
+    justifyContent: "center",
   },
-  headerRight: {
-    minWidth: 88,
-    alignItems: "flex-end",
+  headerBackButtonPressed: {
+    opacity: 0.85,
+  },
+  headerBackButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1976d2",
   },
   title: {
     fontSize: 24,

@@ -68,7 +68,9 @@ export async function syncPatrolHourRecords(
     return { ok: true, attempted: 0, synced: 0, skipped: 0 };
   }
 
-  const rows = records.map((record) => toSupabaseRow(patrolRecordToSyncRow(record)));
+  const rows = records.map((record) =>
+    toSupabaseRow(patrolRecordToSyncRow(record)),
+  );
   const supabase = createSupabaseClient({
     url: cfg.url,
     anonKey: cfg.anonKey,

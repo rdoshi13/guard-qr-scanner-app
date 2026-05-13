@@ -18,6 +18,7 @@ export type PatrolHourRecord = {
   guardName: string;
   dateKey: string;
   hourStart: number;
+  hourWindow?: string;
   scans: Record<PatrolPoint, PatrolScan | null>;
   completedCount: number;
   status: PatrolStatus;
@@ -38,7 +39,7 @@ export type PatrolSyncRow = {
   recordId: string;
   completedCount: number;
   totalPoints: number;
-  pointsScanned: string;
+  pointsScanned: string[];
   scans: Record<string, PatrolScan>;
   createdAt: string;
   finalizedAt: string;
@@ -142,6 +143,7 @@ export async function upsertHourRecord(input: {
   guardName: string;
   dateKey: string;
   hourStart: number;
+  hourWindow: string;
 }): Promise<PatrolHourRecord> {
   if (!isValidPatrolHourStart(input.hourStart)) {
     throw new Error(
@@ -173,6 +175,7 @@ export async function upsertHourRecord(input: {
     guardName: input.guardName,
     dateKey: input.dateKey,
     hourStart: input.hourStart,
+    hourWindow: input.hourWindow,
     scans: emptyScans(),
     completedCount: 0,
     status: "IN_PROGRESS",
@@ -307,20 +310,25 @@ export async function cleanupInvalidPatrolHourRecords(): Promise<number> {
   return removed;
 }
 
-function hourWindowLabel(hourStart: number): string {
-  const start = `${String(hourStart).padStart(2, "0")}:00`;
-  const end = `${String((hourStart + 1) % 24).padStart(2, "0")}:00`;
-  return `${start}-${end}`;
+function formatHour(hour: number): string {
+  const normalized = ((hour % 24) + 24) % 24;
+  const suffix = normalized >= 12 ? "PM" : "AM";
+  const display = normalized % 12 === 0 ? 12 : normalized % 12;
+  return `${display}:00 ${suffix}`;
 }
 
-function pointsScannedList(scans: PatrolHourRecord["scans"]): string {
-  const points: number[] = [];
+function hourWindowLabel(hourStart: number): string {
+  return `${formatHour(hourStart)} - ${formatHour(hourStart + 1)}`;
+}
+
+function pointsScannedList(scans: PatrolHourRecord["scans"]): string[] {
+  const points: string[] = [];
   (Object.keys(scans) as unknown as PatrolPoint[]).forEach((k) => {
-    if (scans[k]) points.push(Number(k));
+    if (scans[k]) points.push(String(k));
   });
 
-  points.sort((a, b) => a - b);
-  return points.join(",");
+  points.sort((a, b) => Number(a) - Number(b));
+  return points;
 }
 
 function completedScans(
@@ -338,7 +346,7 @@ export function patrolRecordToSyncRow(r: PatrolHourRecord): PatrolSyncRow {
   return {
     dateKey: r.dateKey,
     hourStart: r.hourStart,
-    hourWindow: hourWindowLabel(r.hourStart),
+    hourWindow: r.hourWindow ?? hourWindowLabel(r.hourStart),
     societyId: r.societyId,
     society: r.society,
     guardId: r.guardId,
