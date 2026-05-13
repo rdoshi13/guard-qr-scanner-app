@@ -32,6 +32,12 @@
     "web": {
       "favicon": "./assets/patrol-splash-logo.png"
     },
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "26739de6-466f-4e8b-a0ea-7b3e3453f469"
+      }
+    },
+    "owner": "devrishabh"
   }
 }
