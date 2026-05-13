@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type ShiftType = "NIGHT";
-
 export type ShiftSession = {
   guardId: string;
   guardName: string;
-  shift: ShiftType;
   startedAt: string;
   endedAt?: string;
 };
@@ -44,7 +41,6 @@ function parseShiftSession(raw: unknown): ShiftSession | null {
   return {
     guardId,
     guardName,
-    shift: "NIGHT",
     startedAt,
     endedAt,
   };
@@ -102,7 +98,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [lastSession, hydrated]);
 
   const startSession = (newSession: Omit<ShiftSession, "endedAt">) => {
-    setSession({ ...newSession, shift: "NIGHT", endedAt: undefined });
+    setSession({ ...newSession, endedAt: undefined });
   };
 
   const endSession = () => {

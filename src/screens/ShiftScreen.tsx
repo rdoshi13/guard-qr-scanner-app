@@ -57,7 +57,7 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
     setGuardId(makeGuardId(guardName));
   }, [guardIdEdited, guardName]);
 
-  const startNightShift = () => {
+  const startShift = () => {
     if (!canStart) {
       Alert.alert("Missing details", "Enter a guard name and guard ID.");
       return;
@@ -66,7 +66,6 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
     startSession({
       guardId: guardId.trim(),
       guardName: guardName.trim(),
-      shift: "NIGHT",
       startedAt: new Date().toISOString(),
     });
     navigation.replace("Patrol");
@@ -84,7 +83,7 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
       >
         <Text style={styles.title}> QR Patrol</Text>
         <Text style={styles.subtitle}>
-          Start a NIGHT shift to scan patrol checkpoints.
+          Start a guard shift to scan patrol checkpoints throughout the day.
         </Text>
 
         {session ? (
@@ -131,8 +130,8 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
             />
 
             <AppButton
-              title="Start NIGHT shift"
-              onPress={startNightShift}
+              title="Start shift"
+              onPress={startShift}
               disabled={!canStart}
               style={styles.startButton}
             />

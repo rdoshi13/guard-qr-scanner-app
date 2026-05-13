@@ -4,7 +4,7 @@ Small Expo/React Native app for guard patrol QR scanning.
 
 ## What It Does
 
-- Starts a guard NIGHT shift with guard name and ID.
+- Starts a guard shift with guard name and ID.
 - Scans configured patrol QR codes.
 - Tracks one scan per point per hour.
 - Supports 10 patrol points: `GUARDPATROL_QR_P1` through `GUARDPATROL_QR_P10`.

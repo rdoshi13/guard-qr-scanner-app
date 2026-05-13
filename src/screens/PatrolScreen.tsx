@@ -120,7 +120,7 @@ export const PatrolScreen: React.FC = () => {
   const now = new Date();
   const canPatrolNow = !!session;
 
-  const tonightRecords = useMemo(() => {
+  const todayRecords = useMemo(() => {
     if (!session) return [];
     const patrolDate = localDateKey();
     return hourRecords
@@ -130,20 +130,20 @@ export const PatrolScreen: React.FC = () => {
 
   const currentHourRecord = useMemo(() => {
     if (!session) return undefined;
-    return tonightRecords.find((r) => r.hourStart === new Date().getHours());
-  }, [session, tonightRecords]);
+    return todayRecords.find((r) => r.hourStart === new Date().getHours());
+  }, [session, todayRecords]);
 
   const completedCount = currentHourRecord?.completedCount ?? 0;
 
   const displayHours = useMemo(() => {
     const hours = new Set<number>([new Date().getHours()]);
-    tonightRecords.forEach((record) => hours.add(record.hourStart));
+    todayRecords.forEach((record) => hours.add(record.hourStart));
     return Array.from(hours).sort((a, b) => a - b);
-  }, [tonightRecords]);
+  }, [todayRecords]);
 
   const ensurePatrolAllowed = (): boolean => {
     if (!session) {
-      Alert.alert("No active shift", "Start a NIGHT shift before scanning.");
+      Alert.alert("No active shift", "Start a shift before scanning.");
       return false;
     }
 
@@ -334,7 +334,7 @@ export const PatrolScreen: React.FC = () => {
   }
 
   const recordForHour = (hourStart: number) => {
-    return tonightRecords.find((r) => r.hourStart === hourStart);
+    return todayRecords.find((r) => r.hourStart === hourStart);
   };
 
   const statusLabel = (status?: string) => {
@@ -353,9 +353,7 @@ export const PatrolScreen: React.FC = () => {
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.title}>QR Patrol</Text>
-          <Text style={styles.headerMeta}>
-            {PATROL_CONFIG.society} NIGHT shift
-          </Text>
+          <Text style={styles.headerMeta}>{PATROL_CONFIG.society}</Text>
         </View>
         <View style={styles.headerRight}>
           {isSyncing ? (
