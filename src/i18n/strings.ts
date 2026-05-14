@@ -44,6 +44,7 @@ type StringKey =
   | "scanSavedTitle"
   | "scannerTitle"
   | "shiftScreenTitle"
+  | "societyName"
   | "started"
   | "startShift"
   | "startShiftSubtitle"
@@ -100,11 +101,12 @@ const STRINGS: Record<Language, Record<StringKey, string>> = {
     scanSavedTitle: "Scan saved",
     scannerTitle: "QR Patrol",
     shiftScreenTitle: "Start Shift",
+    societyName: "Vihav Trade Center",
     started: "Started",
     startShift: "Start shift",
     startShiftSubtitle:
       "Start a guard shift to scan patrol checkpoints throughout the day.",
-    startShiftTitle: "QR Patrol",
+    startShiftTitle: "Start Shift",
     today: "Today",
     torchOff: "Torch off",
     torchOn: "Torch on",
@@ -153,11 +155,12 @@ const STRINGS: Record<Language, Record<StringKey, string>> = {
     scanSavedTitle: "સ્કેન સેવ થયું",
     scannerTitle: "QR ચોકી",
     shiftScreenTitle: "શિફ્ટ શરૂ કરો",
+    societyName: "વિહવ ટ્રેડ સેન્ટર",
     started: "શરૂ થયું",
     startShift: "શિફ્ટ શરૂ કરો",
     startShiftSubtitle:
       "દિવસભર ચોકી ચેકપોઈન્ટ સ્કેન કરવા ચોકીદાર શિફ્ટ શરૂ કરો.",
-    startShiftTitle: "QR ચોકી",
+    startShiftTitle: "શિફ્ટ શરૂ કરો",
     today: "આજે",
     torchOff: "ટોર્ચ બંધ",
     torchOn: "ટોર્ચ ચાલુ",

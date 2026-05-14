@@ -22,7 +22,7 @@
         "foregroundImage": "./assets/patrol-splash-logo.png",
         "backgroundColor": "#17202a"
       },
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA"

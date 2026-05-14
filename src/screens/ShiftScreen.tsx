@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton } from "../components/AppButton";
 import { useLanguage } from "../context/LanguageContext";
@@ -66,7 +67,10 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
     React.useCallback(() => {
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        () => true,
+        () => {
+          BackHandler.exitApp();
+          return true;
+        },
       );
       return () => subscription.remove();
     }, []),
@@ -90,17 +94,20 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboard}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Text style={styles.title}>{t(language, "startShiftTitle")}</Text>
-        <Text style={styles.subtitle}>{t(language, "startShiftSubtitle")}</Text>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>{t(language, "startShiftTitle")}</Text>
+          <Text style={styles.subtitle}>
+            {t(language, "startShiftSubtitle")}
+          </Text>
 
         {session ? (
           <View style={styles.sessionCard}>
@@ -183,12 +190,17 @@ export const ShiftScreen: React.FC<Props> = ({ navigation }) => {
             })}
           </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f7f9fc",
+  },
   keyboard: {
     flex: 1,
     backgroundColor: "#f7f9fc",

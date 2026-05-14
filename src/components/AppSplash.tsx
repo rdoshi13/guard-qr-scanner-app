@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, Image, StyleSheet, Text, View } from "react-native";
 
+import { useLanguage } from "../context/LanguageContext";
+import { t } from "../i18n/strings";
+
 const SPLASH_MS = 2000;
 
 type Props = {
@@ -8,6 +11,7 @@ type Props = {
 };
 
 export const AppSplash: React.FC<Props> = ({ onDone }) => {
+  const { language } = useLanguage();
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -43,6 +47,7 @@ export const AppSplash: React.FC<Props> = ({ onDone }) => {
       <View style={styles.loaderTrack}>
         <Animated.View style={[styles.loaderFill, { width }]} />
       </View>
+      <Text style={styles.siteName}>{t(language, "societyName")}</Text>
     </View>
   );
 };
@@ -84,5 +89,11 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: 999,
     backgroundColor: "#157f59",
+  },
+  siteName: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "rgba(247, 249, 251, 0.86)",
   },
 });

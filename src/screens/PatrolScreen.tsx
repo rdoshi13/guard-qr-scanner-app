@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -9,7 +8,7 @@ import React, {
 import {
   Alert,
   BackHandler,
-  Pressable,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import {
 } from "react-native";
 import { Camera, CameraView } from "expo-camera";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppButton } from "../components/AppButton";
 import { useLanguage } from "../context/LanguageContext";
@@ -40,6 +40,8 @@ import {
 import { t } from "../i18n/strings";
 import { SUPABASE_SYNC_CONFIG } from "../constants/supabase";
 import { syncPatrolHourRecords } from "../sync/supabase";
+
+const patrolLogo = require("../../assets/patrol-splash-logo.png");
 
 function formatDateTime(iso?: string): string {
   if (!iso) return "-";
@@ -86,22 +88,6 @@ export const PatrolScreen: React.FC = () => {
     navigation.replace("Shift");
   }, [navigation]);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <Pressable
-          onPress={goToShiftScreen}
-          style={({ pressed }) => [
-            styles.headerBackButton,
-            pressed && styles.headerBackButtonPressed,
-          ]}
-        >
-          <Text style={styles.headerBackButtonText}>{t(language, "back")}</Text>
-        </Pressable>
-      ),
-    });
-  }, [goToShiftScreen, language, navigation]);
-
   const refreshRecords = useCallback(async () => {
     await cleanupInvalidPatrolHourRecords();
     await cleanupSyncedOlderThan(7);
@@ -132,6 +118,7 @@ export const PatrolScreen: React.FC = () => {
           return true;
         }
 
+        goToShiftScreen();
         return true;
       };
 
@@ -140,7 +127,7 @@ export const PatrolScreen: React.FC = () => {
         onBackPress,
       );
       return () => subscription.remove();
-    }, [refreshRecords, scanning]),
+    }, [goToShiftScreen, refreshRecords, scanning]),
   );
 
   const now = new Date();
@@ -281,60 +268,77 @@ export const PatrolScreen: React.FC = () => {
 
   if (!session) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.title}>{t(language, "scannerTitle")}</Text>
-        <Text style={styles.infoText}>{t(language, "noActiveShiftMessage")}</Text>
-        <View style={styles.centerButton}>
-          <AppButton
-            title={t(language, "startShift")}
-            onPress={() => navigation.navigate("Shift")}
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+        <View style={styles.centerContainer}>
+          <Image
+            source={patrolLogo}
+            style={styles.emptyLogo}
+            resizeMode="contain"
           />
+          <Text style={styles.siteName}>{t(language, "societyName")}</Text>
+          <Text style={styles.title}>{t(language, "patrolTitle")}</Text>
+          <Text style={styles.infoText}>
+            {t(language, "noActiveShiftMessage")}
+          </Text>
+          <View style={styles.centerButton}>
+            <AppButton
+              title={t(language, "startShift")}
+              onPress={() => navigation.navigate("Shift")}
+            />
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (scanning) {
     return (
-      <View style={styles.scannerContainer}>
-        <Text style={styles.scannerTitle}>{t(language, "scanPrompt")}</Text>
+      <SafeAreaView
+        style={styles.scannerSafeArea}
+        edges={["top", "left", "right"]}
+      >
+        <View style={styles.scannerContainer}>
+          <Text style={styles.scannerTitle}>{t(language, "scanPrompt")}</Text>
 
-        {hasPermission === false ? (
-          <Text style={styles.infoText}>
-            {t(language, "cameraPermissionMissing")}
-          </Text>
-        ) : (
-          <View style={styles.scannerBox}>
-            <CameraView
-              style={StyleSheet.absoluteFillObject}
-              onBarcodeScanned={
-                isProcessingScan ? undefined : handleBarCodeScanned
-              }
-              barcodeScannerSettings={{
-                barcodeTypes: ["qr"],
-              }}
-              enableTorch={torchOn}
-            />
-          </View>
-        )}
+          {hasPermission === false ? (
+            <Text style={styles.infoText}>
+              {t(language, "cameraPermissionMissing")}
+            </Text>
+          ) : (
+            <View style={styles.scannerBox}>
+              <CameraView
+                style={StyleSheet.absoluteFillObject}
+                onBarcodeScanned={
+                  isProcessingScan ? undefined : handleBarCodeScanned
+                }
+                barcodeScannerSettings={{
+                  barcodeTypes: ["qr"],
+                }}
+                enableTorch={torchOn}
+              />
+            </View>
+          )}
 
-        <View style={styles.scannerActions}>
-          <View style={styles.actionColumn}>
-            <AppButton
-              title={torchOn ? t(language, "torchOff") : t(language, "torchOn")}
-              onPress={() => setTorchOn((prev) => !prev)}
-              variant="secondary"
-            />
-          </View>
-          <View style={styles.actionColumn}>
-            <AppButton
-              title={t(language, "cancel")}
-              onPress={finishScanAttempt}
-              variant="secondary"
-            />
+          <View style={styles.scannerActions}>
+            <View style={styles.actionColumn}>
+              <AppButton
+                title={
+                  torchOn ? t(language, "torchOff") : t(language, "torchOn")
+                }
+                onPress={() => setTorchOn((prev) => !prev)}
+                variant="secondary"
+              />
+            </View>
+            <View style={styles.actionColumn}>
+              <AppButton
+                title={t(language, "cancel")}
+                onPress={finishScanAttempt}
+                variant="secondary"
+              />
+            </View>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -350,20 +354,28 @@ export const PatrolScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.shiftCard}>
-        <Text style={styles.shiftTitle}>{session.guardName}</Text>
-        <Text style={styles.shiftText}>
-          {t(language, "guardId")}: {session.guardId}
-        </Text>
-        <Text style={styles.shiftText}>
-          {t(language, "started")}: {formatDateTime(session.startedAt)}
-        </Text>
-      </View>
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Image
+          source={patrolLogo}
+          style={styles.patrolLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.siteName}>{t(language, "societyName")}</Text>
+        <Text style={styles.title}>{t(language, "patrolTitle")}</Text>
+        <View style={styles.shiftCard}>
+          <Text style={styles.shiftTitle}>{session.guardName}</Text>
+          <Text style={styles.shiftText}>
+            {t(language, "guardId")}: {session.guardId}
+          </Text>
+          <Text style={styles.shiftText}>
+            {t(language, "started")}: {formatDateTime(session.startedAt)}
+          </Text>
+        </View>
 
       <View style={styles.scanButtonWrap}>
         <AppButton
@@ -441,16 +453,25 @@ export const PatrolScreen: React.FC = () => {
         })}
       </View>
 
-      <AppButton
-        title={t(language, "endShift")}
-        onPress={endSession}
-        variant="danger"
-      />
-    </ScrollView>
+        <AppButton
+          title={t(language, "endShift")}
+          onPress={endSession}
+          variant="danger"
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f7f9fc",
+  },
+  scannerSafeArea: {
+    flex: 1,
+    backgroundColor: "#0f172a",
+  },
   centerContainer: {
     flex: 1,
     alignItems: "center",
@@ -462,6 +483,11 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 18,
   },
+  emptyLogo: {
+    width: 132,
+    height: 132,
+    marginBottom: 18,
+  },
   container: {
     flex: 1,
     backgroundColor: "#f7f9fc",
@@ -470,25 +496,25 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  headerBackButton: {
-    minHeight: 36,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerBackButtonPressed: {
-    opacity: 0.85,
-  },
-  headerBackButtonText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1976d2",
+  patrolLogo: {
+    width: 104,
+    height: 104,
+    alignSelf: "center",
+    marginBottom: 12,
   },
   title: {
     fontSize: 24,
     fontWeight: "800",
     color: "#102a43",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  siteName: {
+    marginBottom: 6,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#486581",
+    textAlign: "center",
   },
   headerMeta: {
     marginTop: 2,

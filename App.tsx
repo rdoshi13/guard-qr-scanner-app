@@ -48,7 +48,7 @@ const AppBootstrap: React.FC = () => {
   return null;
 };
 
-export default function App() {
+const AppContent: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashDone = useCallback(() => setShowSplash(false), []);
 
@@ -62,14 +62,20 @@ export default function App() {
   }
 
   return (
+    <SessionProvider>
+      <AppBootstrap />
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+      <StatusBar style="dark" />
+    </SessionProvider>
+  );
+};
+
+export default function App() {
+  return (
     <LanguageProvider>
-      <SessionProvider>
-        <AppBootstrap />
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-        <StatusBar style="dark" />
-      </SessionProvider>
+      <AppContent />
     </LanguageProvider>
   );
 }

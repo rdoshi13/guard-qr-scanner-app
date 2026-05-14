@@ -3,8 +3,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { PatrolScreen } from "../screens/PatrolScreen";
 import { ShiftScreen } from "../screens/ShiftScreen";
-import { useLanguage } from "../context/LanguageContext";
-import { t } from "../i18n/strings";
 
 export type RootStackParamList = {
   Shift: undefined;
@@ -14,16 +12,12 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator: React.FC = () => {
-  const { language } = useLanguage();
-
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen
         name="Shift"
         component={ShiftScreen}
         options={{
-          title: t(language, "shiftScreenTitle"),
-          headerBackVisible: false,
           gestureEnabled: false,
         }}
       />
@@ -31,8 +25,6 @@ export const RootNavigator: React.FC = () => {
         name="Patrol"
         component={PatrolScreen}
         options={{
-          title: t(language, "patrolTitle"),
-          headerBackVisible: false,
           gestureEnabled: false,
         }}
       />
